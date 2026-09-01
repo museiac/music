@@ -1,6 +1,7 @@
 import type { Request, Response } from "express"
 import { registerSchema, loginSchema } from "./auth.validation.js"
 import { registerUser, loginUser } from "./auth.service.js"
+import { verifyEmailOtp } from "./otp.service.js";
 
 
 export async function register(req: Request, res: Response){
@@ -39,6 +40,7 @@ export async function login(req: Request, res: Response) {
 
     // 2. Login service
     const result = await loginUser(data);
+    //console.log("Controller token:", result.accessToken);
 
     // 3. Email verification required
     if (result.requiresVerification) {
@@ -55,12 +57,14 @@ export async function login(req: Request, res: Response) {
     return res.status(200).json({
       success: true,
       message: "Login successful",
+      accessToken: result.accessToken,
       user: {
         id: result.existUser.id,
         name: result.existUser.name,
         email: result.existUser.email,
         verified: result.existUser.verified,
         profileCompleted: result.existUser.profileCompleted,
+        role: result.existUser.role,
       },
     });
   } catch (error) {
@@ -69,6 +73,38 @@ export async function login(req: Request, res: Response) {
     return res.status(400).json({
       success: false,
       message: error instanceof Error ? error.message : "Login failed",
+    });
+  }
+}
+
+export async function verifyEmail(req:Request, res: Response) {
+  try{
+    const {userId, otp} = req.body;
+
+    if(!userId || !otp){
+      return res.status(400).json({
+        success: false,
+        message: "User ID and OTP are required",
+      });
+    }
+
+    await verifyEmailOtp(Number(userId), String(otp));
+
+    return res.status(200).json({
+      success: true,
+      message: "Email Verified successfully"
+    });
+
+  }
+  catch(error){
+    console.error("Verify email error:", error);
+
+    return res.status(400).json({
+      success: false,
+      message:
+        error instanceof Error
+          ? error.message
+          : "Email verification failed",
     });
   }
 }

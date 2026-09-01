@@ -1,6 +1,8 @@
 import Prisma from "../../config/prisma.js";
 import { hashPassword, comparePassword } from "../../utils/password.js";
 import type { RegisterInput, LoginInput } from "./auth.validation.js";
+import {generateAccessWebToken} from "../../utils/jwt.js"
+import { createAndSendEmailOtp } from "./otp.service.js";
 
 export async function  registerUser(data: RegisterInput) {
     
@@ -28,6 +30,8 @@ export async function  registerUser(data: RegisterInput) {
             },
         },
     });
+    
+    await createAndSendEmailOtp(user.id, user.email);
 
     return user;
 }
@@ -65,9 +69,14 @@ export async function loginUser(data: LoginInput){
         }
     }
 
+    const accessToken = await generateAccessWebToken(existUser.id);
+
+    //console.log("JWT: ", accessToken);
+
     return {
         requiresVerification: false as const,
         existUser,
+        accessToken,
     };
 }
 
