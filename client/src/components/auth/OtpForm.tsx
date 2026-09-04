@@ -46,16 +46,11 @@ export function OtpForm({ userId, email }: { userId: number; email: string }) {
     setIsVerifying(true);
 
     try {
-      const message = await verifyEmail({ userId, otp: parsed.data.otp });
-      // Verifying does not log the user in — the backend response carries
-      // no token (see lib/auth-context.tsx) — so send them to /login next,
-      // where a real login call will return the actual session. Leave the
-      // form disabled (isVerifying stays true) during the pause so it can't
-      // be resubmitted before the redirect happens.
-      setSuccessMessage(message || "Email verified.");
-      setTimeout(() => {
-        router.push(`/login?verified=1&email=${encodeURIComponent(email)}`);
-      }, 1200);
+      // Verifying returns a real session (same shape as login — see
+      // lib/auth-context.tsx), so this logs the user straight in.
+      const user = await verifyEmail({ userId, otp: parsed.data.otp });
+      setSuccessMessage("Email verified.");
+      router.push(user.profileCompleted ? "/dashboard" : "/complete-profile");
     } catch (error) {
       setFormError(error instanceof ApiError ? error.message : "Something went wrong. Please try again.");
       setIsVerifying(false);

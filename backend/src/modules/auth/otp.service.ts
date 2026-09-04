@@ -2,6 +2,7 @@ import Prisma from "../../config/prisma.js";
 import { hashPassword, comparePassword } from "../../utils/password.js";
 import { generateOtp } from "../../utils/otp.js";
 import { sendVerificationOtp } from "../../services/email/email.service.js";
+import { generateAccessWebToken } from "../../utils/jwt.js";
 
 export async function createEmailOtp(userId: number){
 
@@ -55,7 +56,7 @@ export async function verifyEmailOtp(userId: number, otp: string) {
     throw new Error("OTP expires not found")
   }
 
-  const isValid = comparePassword(
+  const isValid = await comparePassword(
     otp,
     verification.otpHash
   );
@@ -64,7 +65,7 @@ export async function verifyEmailOtp(userId: number, otp: string) {
     throw new Error("Invalid OTP");
   }
 
-  await Prisma.user.update({
+  const user = await Prisma.user.update({
     where:{
       id: userId,
     },
@@ -79,5 +80,10 @@ export async function verifyEmailOtp(userId: number, otp: string) {
     },
   });
 
-  return true;
+  const accessToken = await generateAccessWebToken(userId);
+
+  return {
+    accessToken,
+    user,
+  };
 }

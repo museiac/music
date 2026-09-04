@@ -53,14 +53,14 @@ export interface VerifyEmailPayload {
 
 /**
  * POST /api/auth/verify-email response — backend/src/modules/auth/
- * auth.controller.ts. Unlike login, this does NOT return an accessToken or
- * user object: it only flips the account's `verified` flag. There is no
- * session to establish from this response — the frontend sends the user to
- * /login afterward, where the real login call returns a token.
+ * auth.controller.ts. Same shape as a successful login: it returns a real
+ * session, so a verified account is logged straight in.
  */
 export interface VerifyEmailResponse {
   success: true;
   message: string;
+  accessToken: string;
+  user: User;
 }
 
 /**
@@ -79,17 +79,6 @@ export interface ResendOtpPayload {
 export interface ResendOtpResponse {
   success: true;
   message: string;
-}
-
-export interface CompleteProfilePayload {
-  name: string;
-  bio?: string;
-}
-
-export interface CompleteProfileResponse {
-  success: true;
-  message: string;
-  user: User;
 }
 
 export interface MeResponse {

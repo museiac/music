@@ -77,26 +77,37 @@ export async function login(req: Request, res: Response) {
   }
 }
 
-export async function verifyEmail(req:Request, res: Response) {
-  try{
-    const {userId, otp} = req.body;
+export async function verifyEmail(req: Request, res: Response) {
+  try {
+    const { userId, otp } = req.body;
 
-    if(!userId || !otp){
+    if (!userId || !otp) {
       return res.status(400).json({
         success: false,
         message: "User ID and OTP are required",
       });
     }
 
-    await verifyEmailOtp(Number(userId), String(otp));
+    const result = await verifyEmailOtp(
+      Number(userId),
+      String(otp)
+    );
 
     return res.status(200).json({
       success: true,
-      message: "Email Verified successfully"
+      message: "Email verified successfully",
+      accessToken: result.accessToken,
+      user: {
+        id: result.user.id,
+        name: result.user.name,
+        email: result.user.email,
+        verified: result.user.verified,
+        profileCompleted: result.user.profileCompleted,
+        role: result.user.role,
+      },
     });
 
-  }
-  catch(error){
+  } catch (error) {
     console.error("Verify email error:", error);
 
     return res.status(400).json({

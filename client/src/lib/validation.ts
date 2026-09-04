@@ -43,16 +43,51 @@ export const otpSchema = z.object({
 
 export type OtpFormValues = z.infer<typeof otpSchema>;
 
+/**
+ * Mirrors backend/src/modules/profile/profile.validation.ts exactly. The
+ * Profile model only has a `name` column — there is no bio/about field on
+ * the backend to save one to.
+ */
 export const completeProfileSchema = z.object({
   name: z
     .string()
     .trim()
-    .min(2, "Name must be at least 2 characters")
-    .max(100, "Name must be less than 100 characters"),
-  bio: z.string().trim().max(280, "Keep it under 280 characters").optional(),
+    .min(2, "Profile name must be at least 2 characters")
+    .max(100, "Profile name must be less than 100 characters"),
 });
 
 export type CompleteProfileFormValues = z.infer<typeof completeProfileSchema>;
+
+/**
+ * Mirrors backend/src/modules/plan/plan.validate.ts's createPlanSchema
+ * exactly (name 2-100, description optional ≤500, price ≥0, currency
+ * exactly 3 chars, duration a positive integer). `updatePlanSchema` on the
+ * backend is just `createPlanSchema.partial()`, so the same shape is reused
+ * here for both create and edit forms — the edit form just doesn't require
+ * every field to be re-entered before submitting.
+ */
+export const planSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(2, "Plan name must be at least 2 characters")
+    .max(100, "Plan name is too long"),
+  description: z.string().trim().max(500, "Description is too long").optional(),
+  price: z.coerce
+    .number({ invalid_type_error: "Enter a price" })
+    .min(0, "Price cannot be negative"),
+  currency: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .length(3, "Currency must be a 3-letter code, e.g. INR"),
+  duration: z.coerce
+    .number({ invalid_type_error: "Enter a duration" })
+    .int("Duration must be a whole number of days")
+    .positive("Duration must be greater than 0"),
+});
+
+export type PlanFormValues = z.infer<typeof planSchema>;
 
 /** Flattens a ZodError into `{ fieldName: firstMessage }` for form display. */
 export function fieldErrorsFromZod<T extends Record<string, unknown>>(

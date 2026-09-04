@@ -35,7 +35,7 @@ at it (e.g. `http://localhost:3000/api`) to skip the proxy.
 
 ## What's actually live on the backend today
 
-Read directly from the backend source before building this frontend. Three
+Read directly from the backend source before building this frontend. These
 routes exist and are fully wired up end-to-end:
 
 | Method | Path | Source |
@@ -44,20 +44,34 @@ routes exist and are fully wired up end-to-end:
 | POST | `/api/auth/login` | `backend/src/modules/auth/auth.routes.ts` |
 | POST | `/api/auth/verify-email` | `backend/src/modules/auth/auth.routes.ts` |
 | GET | `/api/admin/test` | `backend/src/modules/admin/admin.routes.ts` (requires a Bearer token for an `ADMIN` user) |
+| POST | `/api/profile` | `backend/src/modules/profile/` (auth required; creates the account's one-and-only Profile row, `{name}` only, and flips `user.profileCompleted` to `true`) |
+| GET | `/api/plan` | `backend/src/modules/plan/` (public; active plans only) |
+| POST/GET/PATCH | `/api/plan/admin[...]` | `backend/src/modules/plan/` (admin-only: create, list all, get one, update, update status) |
 
-**`verify-email` does not return a session.** Unlike `login`, its response is
-just `{ success, message }` — no `accessToken`, no `user` (see
-`auth.controller.ts`). So verifying an account does not log the user in;
-`OtpForm.tsx` redirects to `/login?verified=1&email=…` afterward instead,
-where a real login call returns the actual token. This frontend was adjusted
-to match that response exactly rather than assuming a token that isn't sent.
+⚠️ Two more backend quirks worth knowing (not fixed here, since they're
+backend files): `plan.controller.ts`'s `getActivePlanController` and
+`updatePlanController` both call their service function without `await`, so
+`GET /api/plan`'s `plans` and `PATCH /api/plan/admin/:id`'s `plan` can come
+back as `{}` instead of real data. The frontend works around both
+defensively — see the comments in `src/lib/api.ts`, `/complete-profile`, and
+`/admin/plans/[id]/edit` — rather than trusting those two response bodies.
 
-⚠️ Also worth knowing (not fixed here, since it's a backend file): the OTP
-check in `backend/src/modules/auth/otp.service.ts` calls
-`comparePassword(otp, verification.otpHash)` without `await`. Since that
-function returns a `Promise<boolean>`, the `if (!isValid)` check is testing
-a Promise object, which is always truthy — so **any 6-digit code currently
-verifies successfully**, not just the real one.
+There is also no subscription-creation route at all (the `Subscription`
+model in `schema.prisma` has no controller or routes), so picking a plan
+during onboarding can't actually be persisted server-side yet — see
+`planApi.subscribe` in `src/lib/api.ts`.
+
+**`verify-email` returns a real session** — same shape as `login`
+(`accessToken` + `user`), so a verified account is logged straight in
+(`OtpForm.tsx` → `/complete-profile` or `/dashboard`, no separate login step
+needed). The OTP check in `otp.service.ts` also correctly `await`s its
+password comparison, so entering the wrong code is correctly rejected.
+
+> The backend for this project is being actively developed alongside this
+> frontend — the exact shape of `verify-email`'s response has changed twice
+> already while building this. Treat every "what's live" note in this file
+> as a snapshot, and re-read the backend source in `backend/src/modules/`
+> if something here stops matching what you observe.
 
 The following are built on the frontend per the project's contract, calling
 real `fetch` requests to the exact paths below, but will 404 until the
@@ -66,10 +80,10 @@ backend adds them — `auth.routes.ts` doesn't register any of them yet:
 | Method | Path | Used by |
 | --- | --- | --- |
 | POST | `/api/auth/resend-otp` | `/verify-email` page |
-| POST | `/api/auth/complete-profile` | `/complete-profile` page |
 | GET | `/api/auth/me` | `refreshUser()` in `lib/auth-context.tsx` |
 | GET | `/api/admin/users` | `/admin/users` page |
 | GET/redirect | `/api/auth/google` | "Continue with Google" button |
+| POST | `/api/plan/subscribe` | plan-selection step of `/complete-profile` |
 
 Every one of these calls is isolated in `src/lib/api.ts` with a comment
 explaining it's pending — adding the backend route is a one-line change on
@@ -99,15 +113,19 @@ the frontend (clear stored token/user).
 
 ## Testing flow
 
-**Register → verify → login → dashboard**:
+**Register → verify → complete profile → dashboard**:
 
 1. `/register` → `POST /api/auth/register` → redirected to `/verify-email`
 2. Enter the OTP emailed to the address (`otp.service.ts` sends it today) →
-   `POST /api/auth/verify-email` → success message → redirected to
-   `/login?verified=1&email=…` (no session yet — see the note above)
-3. Log in with the same credentials → `POST /api/auth/login` now succeeds
-   (the account is verified) → `/complete-profile` or `/dashboard` depending
-   on `profileCompleted`
+   `POST /api/auth/verify-email` returns a session directly, logging the
+   user in immediately — see the note above.
+3. Lands on `/complete-profile`, a two-step wizard:
+   - **Step 1 — Name**: `POST /api/profile` (real). "Next" saves it and
+     moves to step 2 without leaving the page.
+   - **Step 2 — Plan**: `GET /api/plan` (real, public) lists active plans as
+     selectable cards. "Continue with selected plan" or "Try for free" both
+     finish onboarding and land on `/dashboard` — see the subscription note
+     above for why picking a plan doesn't persist anything yet.
 
 **Login** (works today for an already-verified account, e.g. the seeded
 admin):
@@ -123,5 +141,10 @@ in as `admin@museiac.com` / `Admin@123456`:
 1. `/admin/dashboard` calls the real `GET /api/admin/test`
 2. `/admin/users` calls `GET /api/admin/users` (shows a clear "not
    implemented yet" message until the backend adds it)
-3. A `USER`-role account visiting `/admin/*` is redirected to `/dashboard`
+3. `/admin/plans` — real: lists all plans (`GET /api/plan/admin`), "Create
+   plan" (`POST /api/plan/admin`), "Edit" (`GET`/`PATCH /api/plan/admin/:id`)
+   and a per-row Activate/Deactivate action
+   (`PATCH /api/plan/admin/:id/status`); the edit page's Status card also
+   supports setting `ARCHIVED`
+4. A `USER`-role account visiting `/admin/*` is redirected to `/dashboard`
    by both `middleware.ts` and `ProtectedRoute`

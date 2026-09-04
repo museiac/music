@@ -6,12 +6,22 @@ import { useEffect } from "react";
 import { FullPageSpinner } from "@/components/ui/Spinner";
 import { useAuth } from "@/hooks/useAuth";
 
+type ProfileGate = "require-complete" | "require-incomplete" | "none";
+
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  /** Only allow role === "ADMIN". */
+  /** Only allow role === "ADMIN". Always implies profileGate "none". */
   adminOnly?: boolean;
-  /** For /complete-profile: only render while the profile is NOT complete yet. */
-  requireIncompleteProfile?: boolean;
+  /**
+   * "require-complete" (default, e.g. /dashboard): bounce to /complete-profile
+   * until the profile is done. "require-incomplete": only used by nothing
+   * today (see profileGate "none" below for why /complete-profile doesn't
+   * use it). "none" (e.g. /complete-profile): just requires auth — the page
+   * manages its own step flow regardless of profileCompleted, since that
+   * flag flips to true partway through the wizard (after the name step,
+   * before plan selection) and shouldn't yank the user to /dashboard mid-flow.
+   */
+  profileGate?: ProfileGate;
 }
 
 /**
@@ -25,14 +35,15 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({
   children,
   adminOnly = false,
-  requireIncompleteProfile = false,
+  profileGate = "require-complete",
 }: ProtectedRouteProps) {
   const { user, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
 
-  const needsProfileCompletion = !requireIncompleteProfile && !adminOnly && user && !user.profileCompleted;
-  const profileAlreadyComplete = requireIncompleteProfile && user?.profileCompleted;
+  const gate: ProfileGate = adminOnly ? "none" : profileGate;
   const forbiddenForRole = adminOnly && user && user.role !== "ADMIN";
+  const needsProfileCompletion = gate === "require-complete" && user && !user.profileCompleted;
+  const profileAlreadyComplete = gate === "require-incomplete" && user?.profileCompleted;
 
   useEffect(() => {
     if (isLoading) return;

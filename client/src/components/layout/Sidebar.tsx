@@ -8,6 +8,7 @@ import { cn } from "@/lib/cn";
 const links = [
   { href: "/admin/dashboard", label: "Overview" },
   { href: "/admin/users", label: "Users" },
+  { href: "/admin/plans", label: "Plans" },
 ];
 
 export function Sidebar() {
@@ -16,7 +17,7 @@ export function Sidebar() {
   return (
     <nav className="flex shrink-0 gap-1 overflow-x-auto md:w-48 md:flex-col md:overflow-visible">
       {links.map((link) => {
-        const isActive = pathname === link.href;
+        const isActive = pathname === link.href || pathname?.startsWith(`${link.href}/`);
         return (
           <Link
             key={link.href}

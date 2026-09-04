@@ -9,16 +9,16 @@ import {
   type ReactNode,
 } from "react";
 
-import { authApi } from "./api";
+import { authApi, profileApi } from "./api";
 import { clearRoutingCookies, setRoutingCookies } from "./session-cookies";
 import { clearStoredSession, readStoredSession, writeStoredSession } from "./storage";
 import type {
-  CompleteProfilePayload,
   LoginPayload,
   RegisterPayload,
   ResendOtpPayload,
   VerifyEmailPayload,
 } from "@/types/auth";
+import type { CreateProfilePayload } from "@/types/profile";
 import type { User } from "@/types/user";
 
 export interface LoginResult {
@@ -35,9 +35,9 @@ interface AuthContextValue {
   isLoading: boolean;
   login: (payload: LoginPayload) => Promise<LoginResult>;
   register: (payload: RegisterPayload) => Promise<{ id: number; name: string; email: string }>;
-  verifyEmail: (payload: VerifyEmailPayload) => Promise<string>;
+  verifyEmail: (payload: VerifyEmailPayload) => Promise<User>;
   resendOtp: (payload: ResendOtpPayload) => Promise<string>;
-  completeProfile: (payload: CompleteProfilePayload) => Promise<User>;
+  completeProfile: (payload: CreateProfilePayload) => Promise<User>;
   logout: () => void;
   refreshUser: () => Promise<void>;
 }
@@ -91,14 +91,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return result.user;
   }, []);
 
-  const verifyEmail = useCallback(async (payload: VerifyEmailPayload) => {
-    // POST /api/auth/verify-email only flips the account's `verified` flag
-    // (see backend/src/modules/auth/auth.controller.ts) — it does not
-    // return a token or user like login does, so there is no session to
-    // establish here. The caller sends the user to /login afterward.
-    const result = await authApi.verifyEmail(payload);
-    return result.message;
-  }, []);
+  const verifyEmail = useCallback(
+    async (payload: VerifyEmailPayload) => {
+      // POST /api/auth/verify-email returns a real session — same shape as
+      // login (see backend/src/modules/auth/auth.controller.ts) — so a
+      // verified account is logged straight in.
+      const result = await authApi.verifyEmail(payload);
+      applySession(result.accessToken, result.user);
+      return result.user;
+    },
+    [applySession]
+  );
 
   const resendOtp = useCallback(async (payload: ResendOtpPayload) => {
     const result = await authApi.resendOtp(payload);
@@ -106,17 +109,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const completeProfile = useCallback(
-    async (payload: CompleteProfilePayload) => {
-      if (!token) {
+    async (payload: CreateProfilePayload) => {
+      if (!token || !user) {
         throw new Error("You must be logged in to complete your profile.");
       }
-      const result = await authApi.completeProfile(payload, token);
-      setUser(result.user);
-      writeStoredSession({ token, user: result.user });
-      setRoutingCookies(result.user);
-      return result.user;
+      // POST /api/profile (backend/src/modules/profile/) is real, but its
+      // response only echoes {id, name, userId} for the new Profile row —
+      // not the updated User. We know from profile.service.ts that a
+      // successful call always flips the user's profileCompleted to true
+      // server-side, so that's patched in locally here.
+      await profileApi.create(payload, token);
+      const nextUser: User = { ...user, name: payload.name, profileCompleted: true };
+      setUser(nextUser);
+      writeStoredSession({ token, user: nextUser });
+      setRoutingCookies(nextUser);
+      return nextUser;
     },
-    [token]
+    [token, user]
   );
 
   const logout = useCallback(() => {

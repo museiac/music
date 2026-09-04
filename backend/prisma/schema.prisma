@@ -32,6 +32,19 @@ model User {
 
   accounts         Accounts[]
   emailVerification EmailVerification[]
+  profile           Profile?
+  subscriptions     Subscription[]
+}
+
+model Profile {
+  id               Int    @id @default(autoincrement())
+  userId           Int    @unique
+  name             String
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)      
 }
 
 model Accounts {
@@ -57,4 +70,42 @@ model EmailVerification {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+enum PlanStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
+model Plan {
+  id           Int       @id @default(autoincrement())
+  name         String
+  description  String?
+  price        Decimal   @db.Decimal(10, 2)
+  currency     String    @default("INR")
+  duration     Int       // duration in days
+  features     Json
+  status       PlanStatus  @default(ACTIVE)
+
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  subscription Subscription[]
+}
+
+model Subscription {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  planId    Int
+
+  status    String
+  startDate DateTime
+  endDate   DateTime
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan      Plan      @relation(fields: [planId], references: [id])
 }
