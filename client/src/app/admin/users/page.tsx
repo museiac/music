@@ -26,10 +26,7 @@ export default function AdminUsersPage() {
 
     async function load() {
       try {
-        // GET /api/admin/users is not implemented on the backend yet — only
-        // GET /api/admin/test exists (backend/src/modules/admin/admin.routes.ts).
-        // This call is real and isolated here; it will start working the
-        // moment that route is added, with no frontend changes needed.
+        // GET /api/admin/users is protected by authenticate + requireAdmin.
         const result = await adminApi.listUsers(token as string);
         if (!cancelled) setUsers(result.users);
       } catch (err) {
@@ -37,12 +34,6 @@ export default function AdminUsersPage() {
         if (err instanceof ApiError && err.status === 401) {
           logout();
           router.replace("/login");
-          return;
-        }
-        if (err instanceof ApiError && err.status === 404) {
-          setError(
-            "GET /api/admin/users hasn't been implemented on the backend yet, so this list can't load. Add that route to backend/src/modules/admin to enable this page."
-          );
           return;
         }
         setError(err instanceof ApiError ? err.message : "Something went wrong. Please try again.");

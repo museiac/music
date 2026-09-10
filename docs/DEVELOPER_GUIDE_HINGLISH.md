@@ -277,7 +277,7 @@ PORT=3000
 JWT_SECRET="long-random-secret"
 ```
 
-Is file ko `backend/.env` ke naam se rakhein. Current repo me backend ka `.env.example` nahi hai, isliye team ko required email variables separately provide karne honge.
+Is file ko `backend/.env` ke naam se rakhein. Available variable names ke liye `backend/.env.example` copy karke values fill kar sakte hain.
 
 Client ke liye, agar API same-origin `/api` par available nahi hai, `client/.env.local` banayein:
 
@@ -383,9 +383,8 @@ feat: add admin plan status endpoint
 
 Recommended next engineering tasks:
 
-1. Add `backend/.env.example` with all non-secret variable names.
-2. Add a real `infra/docker-compose.yml` for PostgreSQL and Mailpit.
-3. Add missing backend package scripts for `db:migrate`, `db:deploy`, `db:seed`, and `db:studio`.
-4. Connect `@museiac/contracts` to backend and client using workspace dependencies.
-5. Add API tests for auth, profile, admin, and plan modules.
-6. Add a CI workflow that runs install, typecheck, build, lint, and tests.
+1. Add a real `infra/docker-compose.yml` for PostgreSQL and Mailpit.
+2. Add backend package scripts for `db:migrate`, `db:deploy`, `db:seed`, and `db:studio`.
+3. Connect `@museiac/contracts` to backend and client using workspace dependencies.
+4. Add API tests for auth, profile, admin, and plan modules.
+5. Add a CI workflow that runs install, typecheck, build, lint, and tests.

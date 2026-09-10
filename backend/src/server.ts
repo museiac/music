@@ -2,7 +2,7 @@ import "dotenv/config"
 import app from "./app.js";
 import Prisma from "./config/prisma.js";
 
-const PORT = Number(process.env.PORT) || 5000;
+const PORT = Number(process.env.PORT) || 3000;
 
 async function startServer(){
     try{
