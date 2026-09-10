@@ -327,19 +327,18 @@ Is order ko skip na karein:
 - Prisma connection error: PostgreSQL service, database name, username, password, aur port check karein.
 - Browser me API error: Backend terminal running hai ya nahi aur `client/.env.local` ka URL `http://localhost:3000/api` hai ya nahi check karein.
 - Port already in use: Dusra process band karein ya `PORT` change karke client/API configuration update karein.
-- `404` from frontend action: `client/src/lib/api.ts` me endpoint dekhein aur matching backend route file verify karein. Kuch frontend methods future routes ko target karte hain.
+- `404` from frontend action: `client/src/lib/api.ts` me endpoint dekhein aur matching backend route file verify karein.
 
 ## 8. Existing API aur current limitations
 
-Frontend API client me kuch methods future routes ko target karte hain. Current backend me ye routes abhi implement nahi hain:
+Current backend ke implemented endpoint groups:
 
-- `POST /api/auth/resend-otp`
-- `GET /api/auth/me`
-- `GET /api/admin/users`
-- `POST /api/plan/subscribe`
-- `POST /api/auth/logout`
+- Auth: register, login, verify email, resend OTP, current user
+- Admin: admin health check, users list
+- Profile: profile create
+- Plans: public list, admin CRUD/status, authenticated subscription
 
-Isliye in actions ko use karte waqt 404 ya fallback behavior expected ho sakta hai. New developer ko frontend method dekhkar automatically assume nahi karna chahiye ki backend route live hai; corresponding route file verify karein.
+Logout intentionally frontend-only hai: token, local session, aur routing cookies clear kiye jaate hain. Backend logout route ki zaroorat nahi hai because JWT stateless hai.
 
 Plan controllers me response ko return karne se pehle async service calls par `await` carefully check karein. Existing comments me is behavior ka warning diya gaya hai.
 
@@ -388,6 +387,5 @@ Recommended next engineering tasks:
 2. Add a real `infra/docker-compose.yml` for PostgreSQL and Mailpit.
 3. Add missing backend package scripts for `db:migrate`, `db:deploy`, `db:seed`, and `db:studio`.
 4. Connect `@museiac/contracts` to backend and client using workspace dependencies.
-5. Implement or remove frontend methods whose backend routes are currently missing.
-6. Add API tests for auth, profile, and plan modules.
-7. Add a CI workflow that runs install, typecheck, build, lint, and tests.
+5. Add API tests for auth, profile, admin, and plan modules.
+6. Add a CI workflow that runs install, typecheck, build, lint, and tests.

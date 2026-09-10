@@ -1,7 +1,6 @@
 import type { Request , Response } from "express";
 import { createPlanSchema, updatePlanSchema } from "./plan.validate.js";
-import { createPlan, getAllPlans, getActivePlans, getPlanById, updatePlan, updatePlanStatus } from "./plan.service.js";
-import { success } from "zod";
+import { createPlan, getAllPlans, getActivePlans, getPlanById, subscribeToPlan, updatePlan, updatePlanStatus } from "./plan.service.js";
 
 
 export async function createPlanController(
@@ -130,7 +129,7 @@ export async function updatePlanController(
 
         const data = updatePlanSchema.parse(req.body);
 
-        const plan = updatePlan(id, data);
+        const plan = await updatePlan(id, data);
 
         return res.status(200).json({
             success: true,
@@ -199,6 +198,32 @@ export async function updatePlanStatusController(
                 error instanceof Error
                 ? error.message
                 : "Plan status update failed",
+        });
+    }
+}
+
+export async function subscribeToPlanController(req: Request, res: Response) {
+    try {
+        const userId = req.user?.id;
+        const planId = Number(req.body.planId);
+
+        if (!userId) {
+            return res.status(401).json({ success: false, message: "Authentication required" });
+        }
+        if (!Number.isInteger(planId) || planId <= 0) {
+            return res.status(400).json({ success: false, message: "A valid plan ID is required" });
+        }
+
+        const subscription = await subscribeToPlan(userId, planId);
+        return res.status(201).json({
+            success: true,
+            message: "Plan selected successfully",
+            subscription,
+        });
+    } catch (error) {
+        return res.status(400).json({
+            success: false,
+            message: error instanceof Error ? error.message : "Could not select plan",
         });
     }
 }

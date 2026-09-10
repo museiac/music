@@ -85,13 +85,8 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
  * Auth endpoints. register/login/verifyEmail are wired to the real,
  * currently-live backend routes in backend/src/modules/auth/auth.routes.ts.
  *
- * resendOtp and me are NOT implemented on the backend yet (auth.routes.ts
- * only registers POST /register, POST /login and POST /verify-email) —
- * calling them today will fail with a 404. They call the exact paths/bodies
- * this project's contract specifies so hooking them up later is purely a
- * backend change; nothing in the frontend needs to move. There is no
- * "complete profile" route under /auth at all — see profileApi.create below
- * for the real one, under /api/profile.
+ * resendOtp and me are live backend routes. There is no complete-profile
+ * route under /auth; profileApi.create owns that flow under /api/profile.
  */
 export const authApi = {
   register: (payload: RegisterPayload) =>
@@ -103,11 +98,9 @@ export const authApi = {
   verifyEmail: (payload: VerifyEmailPayload) =>
     request<VerifyEmailResponse>("/auth/verify-email", { method: "POST", body: payload }),
 
-  // NOT YET IMPLEMENTED ON THE BACKEND — see note above.
   resendOtp: (payload: ResendOtpPayload) =>
     request<ResendOtpResponse>("/auth/resend-otp", { method: "POST", body: payload }),
 
-  // NOT YET IMPLEMENTED ON THE BACKEND — see note above.
   me: (token: string) => request<MeResponse>("/auth/me", { method: "GET", token }),
 
   // The backend does not expose POST /api/auth/logout. Sign-out is handled
@@ -118,14 +111,11 @@ export const authApi = {
 /**
  * Admin endpoints. ping() hits the real, currently-live
  * GET /api/admin/test route (backend/src/modules/admin/admin.routes.ts),
- * protected by `authenticate` + `requireAdmin`. listUsers() targets
- * GET /api/admin/users, which the backend does not implement yet — only
- * /api/admin/test exists today.
+ * Both endpoints are protected by `authenticate` + `requireAdmin`.
  */
 export const adminApi = {
   ping: (token: string) => request<AdminPingResponse>("/admin/test", { method: "GET", token }),
 
-  // NOT YET IMPLEMENTED ON THE BACKEND — see note above.
   listUsers: (token: string) =>
     request<{ success: true; users: AdminUserRow[] }>("/admin/users", {
       method: "GET",
@@ -149,16 +139,8 @@ export const profileApi = {
  * is public (no auth). Everything under /admin requires an ADMIN bearer
  * token.
  *
- * Two backend response quirks to know about (not fixed here, see
- * plan.controller.ts): getActivePlanController and updatePlanController
- * both call their service function without `await`, so `plans`/`plan` in
- * those two responses can come back as `{}` instead of real data — this
- * file's callers treat that defensively (see `/complete-profile` and
- * `/admin/plans/[id]/edit`) rather than trusting those two response bodies.
- *
- * There is also no subscription-creation route yet (the Subscription model
- * in schema.prisma has no controller/route at all), so choosing a plan
- * can't actually be persisted server-side today — see `subscribe` below.
+ * Plan selection is persisted by POST /api/plan/subscribe. It replaces the
+ * user's previous active subscription.
  */
 export const planApi = {
   listActive: () => request<{ success: true; plans: Plan[] }>("/plan", { method: "GET" }),
@@ -190,10 +172,6 @@ export const planApi = {
       token,
     }),
 
-  // NOT YET IMPLEMENTED ON THE BACKEND — see note above. Attempted from the
-  // plan-selection step of /complete-profile; failing here never blocks
-  // onboarding since there's nothing the frontend can do about a missing
-  // backend route.
   subscribe: (payload: { planId: number | null }, token: string) =>
     request<{ success: true; message: string }>("/plan/subscribe", {
       method: "POST",

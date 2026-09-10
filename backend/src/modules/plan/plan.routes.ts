@@ -4,7 +4,8 @@ import { createPlanController,
     getActivePlanController, 
     getPlanByIdController, 
     updatePlanController,
-    updatePlanStatusController
+    updatePlanStatusController,
+    subscribeToPlanController
  } 
  from "./plan.controller.js";
 
@@ -21,5 +22,6 @@ import { createPlanController,
 
  //routes for user
  router.get("/", getActivePlanController);
+ router.post("/subscribe", authenticate, subscribeToPlanController);
 
  export default router;

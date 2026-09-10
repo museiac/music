@@ -80,3 +80,15 @@ export async function loginUser(data: LoginInput){
     };
 }
 
+export async function getUserById(userId: number) {
+    const user = await Prisma.user.findUnique({
+        where: { id: userId },
+    });
+
+    if (!user) {
+        throw new Error("User not found");
+    }
+
+    return user;
+}
+

@@ -22,8 +22,11 @@ export function middleware(request: NextRequest) {
   const role = request.cookies.get(ROLE_COOKIE)?.value;
 
   if (pathname === "/") {
-    const destination = isAuthed ? (profileCompleted ? "/dashboard" : "/complete-profile") : "/login";
-    return NextResponse.redirect(new URL(destination, request.url));
+    if (isAuthed) {
+      const destination = profileCompleted ? "/dashboard" : "/complete-profile";
+      return NextResponse.redirect(new URL(destination, request.url));
+    }
+    return NextResponse.next();
   }
 
   const isProtected = PROTECTED_PREFIXES.some(

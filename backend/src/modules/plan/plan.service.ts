@@ -137,3 +137,34 @@ export async function updatePlanStatus(
 
   return plan;
 }
+
+export async function subscribeToPlan(userId: number, planId: number) {
+  const plan = await Prisma.plan.findFirst({
+    where: { id: planId, status: "ACTIVE" },
+  });
+
+  if (!plan) {
+    throw new Error("Active plan not found");
+  }
+
+  const startDate = new Date();
+  const endDate = new Date(startDate);
+  endDate.setDate(endDate.getDate() + plan.duration);
+
+  return Prisma.$transaction(async (tx) => {
+    await tx.subscription.updateMany({
+      where: { userId, status: "ACTIVE" },
+      data: { status: "CANCELLED" },
+    });
+
+    return tx.subscription.create({
+      data: {
+        userId,
+        planId,
+        status: "ACTIVE",
+        startDate,
+        endDate,
+      },
+    });
+  });
+}

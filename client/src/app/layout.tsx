@@ -5,8 +5,8 @@ import { AuthProvider } from "@/lib/auth-context";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Museiac",
-  description: "Museiac — authentication test frontend",
+  title: "Museiac — release your sound",
+  description: "A focused workspace for independent artists to grow their music.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

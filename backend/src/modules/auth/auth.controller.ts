@@ -1,7 +1,25 @@
 import type { Request, Response } from "express"
 import { registerSchema, loginSchema } from "./auth.validation.js"
-import { registerUser, loginUser } from "./auth.service.js"
-import { verifyEmailOtp } from "./otp.service.js";
+import { getUserById, registerUser, loginUser } from "./auth.service.js"
+import { createAndSendEmailOtp, verifyEmailOtp } from "./otp.service.js";
+
+function publicUser(user: {
+  id: number;
+  name: string;
+  email: string;
+  verified: boolean;
+  profileCompleted: boolean;
+  role: "USER" | "ADMIN";
+}) {
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    verified: user.verified,
+    profileCompleted: user.profileCompleted,
+    role: user.role,
+  };
+}
 
 
 export async function register(req: Request, res: Response){
@@ -58,14 +76,7 @@ export async function login(req: Request, res: Response) {
       success: true,
       message: "Login successful",
       accessToken: result.accessToken,
-      user: {
-        id: result.existUser.id,
-        name: result.existUser.name,
-        email: result.existUser.email,
-        verified: result.existUser.verified,
-        profileCompleted: result.existUser.profileCompleted,
-        role: result.existUser.role,
-      },
+      user: publicUser(result.existUser),
     });
   } catch (error) {
     console.error("Login error:", error);
@@ -97,14 +108,7 @@ export async function verifyEmail(req: Request, res: Response) {
       success: true,
       message: "Email verified successfully",
       accessToken: result.accessToken,
-      user: {
-        id: result.user.id,
-        name: result.user.name,
-        email: result.user.email,
-        verified: result.user.verified,
-        profileCompleted: result.user.profileCompleted,
-        role: result.user.role,
-      },
+      user: publicUser(result.user),
     });
 
   } catch (error) {
@@ -116,6 +120,45 @@ export async function verifyEmail(req: Request, res: Response) {
         error instanceof Error
           ? error.message
           : "Email verification failed",
+    });
+  }
+}
+
+export async function me(req: Request, res: Response) {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: "Authentication required" });
+    }
+
+    const user = await getUserById(userId);
+    return res.status(200).json({ success: true, user: publicUser(user) });
+  } catch (error) {
+    return res.status(404).json({
+      success: false,
+      message: error instanceof Error ? error.message : "User not found",
+    });
+  }
+}
+
+export async function resendOtp(req: Request, res: Response) {
+  try {
+    const userId = Number(req.body.userId);
+    if (!Number.isInteger(userId) || userId <= 0) {
+      return res.status(400).json({ success: false, message: "A valid user ID is required" });
+    }
+
+    const user = await getUserById(userId);
+    if (user.verified) {
+      return res.status(400).json({ success: false, message: "Email is already verified" });
+    }
+
+    await createAndSendEmailOtp(user.id, user.email);
+    return res.status(200).json({ success: true, message: "A new verification code has been sent" });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: error instanceof Error ? error.message : "Could not resend verification code",
     });
   }
 }

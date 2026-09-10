@@ -64,12 +64,8 @@ export interface VerifyEmailResponse {
 }
 
 /**
- * Everything below this line documents the contract this prompt specified
- * for endpoints that do not exist on the backend yet (verified by reading
- * backend/src/modules/auth/auth.routes.ts, which only wires up /register,
- * /login and /verify-email). The frontend calls these exact paths so wiring
- * them up later is a backend-only change — see the "NOT YET IMPLEMENTED"
- * notes in src/lib/api.ts.
+ * These contracts match the live auth routes, including current-user and
+ * resend-OTP responses.
  */
 
 export interface ResendOtpPayload {

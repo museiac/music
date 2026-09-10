@@ -1,9 +1,7 @@
 export type UserRole = "USER" | "ADMIN";
 
 /**
- * Mirrors the safe user object the backend returns from
- * POST /api/auth/register, POST /api/auth/login and (once implemented)
- * POST /api/auth/verify-email — see backend/src/modules/auth/auth.controller.ts.
+ * Mirrors the safe user object returned by the auth and current-user routes.
  */
 export interface User {
   id: number;
@@ -15,9 +13,7 @@ export interface User {
 }
 
 /**
- * Row shape expected from GET /api/admin/users. That endpoint is not yet
- * implemented on the backend (only GET /api/admin/test exists today) — see
- * the note in src/lib/api.ts.
+ * Row shape returned by GET /api/admin/users.
  */
 export interface AdminUserRow {
   id: number;
