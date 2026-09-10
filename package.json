@@ -1,0 +1,20 @@
+{
+  "name": "museiac",
+  "private": true,
+  "packageManager": "pnpm@9.15.0",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "dev": "pnpm --parallel -r --if-present dev",
+    "build": "pnpm -r --if-present build",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "lint": "pnpm -r --if-present lint",
+    "test": "pnpm -r --if-present test",
+    "db:migrate": "pnpm --filter @museiac/backend db:migrate",
+    "db:deploy": "pnpm --filter @museiac/backend db:deploy",
+    "db:studio": "pnpm --filter @museiac/backend db:studio",
+    "db:seed": "pnpm --filter @museiac/backend db:seed",
+    "infra:up": "docker compose -f infra/docker-compose.yml up -d",
+    "infra:down": "docker compose -f infra/docker-compose.yml down",
+    "infra:reset": "docker compose -f infra/docker-compose.yml down -v && pnpm infra:up"
+  }
+}
