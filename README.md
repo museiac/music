@@ -74,14 +74,14 @@ pnpm install
 
 ```env
 DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/museiac"
-PORT=5000
+PORT=3000
 JWT_SECRET="replace-with-a-long-random-secret"
 ```
 
 Agar frontend direct backend ko call karega to `client/.env.local` banayein:
 
 ```env
-NEXT_PUBLIC_API_URL="http://localhost:5000/api"
+NEXT_PUBLIC_API_URL="http://localhost:3000/api"
 ```
 
 ### 5. Database prepare karein
@@ -108,7 +108,7 @@ Terminal 2:
 pnpm --filter @museiac/client dev
 ```
 
-API `http://localhost:5000` aur web app `http://localhost:3001` par open karein. API root par backend running ka JSON response aana chahiye.
+API `http://localhost:3000` aur web app `http://localhost:3001` par open karein. API root par backend running ka JSON response aana chahiye.
 
 ### 7. Verify karein
 
@@ -135,7 +135,7 @@ Create `backend/.env` with at least:
 
 ```env
 DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/museiac"
-PORT=5000
+PORT=3000
 JWT_SECRET="replace-with-a-long-random-secret"
 ```
 
@@ -144,7 +144,7 @@ Add the email variables required by `backend/src/services/email` when email veri
 Create `client/.env.local` when the API is not available through the default `/api` path:
 
 ```env
-NEXT_PUBLIC_API_URL="http://localhost:5000/api"
+NEXT_PUBLIC_API_URL="http://localhost:3000/api"
 ```
 
 ## Database
@@ -170,7 +170,7 @@ Use two terminals:
 pnpm --filter @museiac/backend dev
 ```
 
-The API starts at `http://localhost:5000`.
+The API starts at `http://localhost:3000`.
 
 ```bash
 pnpm --filter @museiac/client dev

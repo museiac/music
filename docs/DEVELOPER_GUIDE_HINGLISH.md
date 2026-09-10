@@ -12,7 +12,7 @@ client/ (Next.js + React, port 3001)
   |
   | fetch calls from client/src/lib/api.ts
   v
-backend/ (Express + TypeScript, port 5000)
+backend/ (Express + TypeScript, port 3000)
   |
   +-- Prisma client
   |
@@ -75,7 +75,7 @@ Application ka process entry point hai:
 
 1. `dotenv/config` se environment variables load karta hai.
 2. `Prisma.$connect()` se database connection establish karta hai.
-3. `app.listen()` se port `5000` par server start karta hai.
+3. `app.listen()` se port `3000` par server start karta hai. Ye value `backend/.env` ke `PORT` se aati hai.
 4. Database connection fail ho to process exit karta hai.
 
 ### `backend/src/app.ts`
@@ -273,7 +273,7 @@ Backend environment file banayein:
 
 ```env
 DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/museiac"
-PORT=5000
+PORT=3000
 JWT_SECRET="long-random-secret"
 ```
 
@@ -282,7 +282,7 @@ Is file ko `backend/.env` ke naam se rakhein. Current repo me backend ka `.env.e
 Client ke liye, agar API same-origin `/api` par available nahi hai, `client/.env.local` banayein:
 
 ```env
-NEXT_PUBLIC_API_URL="http://localhost:5000/api"
+NEXT_PUBLIC_API_URL="http://localhost:3000/api"
 ```
 
 Database ready hone ke baad:
@@ -302,7 +302,7 @@ pnpm --filter @museiac/client dev
 
 URLs:
 
-- API: `http://localhost:5000`
+- API: `http://localhost:3000`
 - Web: `http://localhost:3001`
 
 ### Beginner checklist: agar pehli baar setup kar rahe hain
@@ -318,14 +318,14 @@ Is order ko skip na karein:
 7. Prisma ke `generate`, `migrate dev`, aur `db seed` commands run karein.
 8. Terminal 1 me backend aur Terminal 2 me client start karein.
 9. Browser me `http://localhost:3001` open karein.
-10. API check karne ke liye `http://localhost:5000` open karein.
+10. API check karne ke liye `http://localhost:3000` open karein.
 
 ### Common first-time problems
 
 - `pnpm: command not found`: Corepack/pnpm install karein. Windows me `corepack enable` par `EPERM` aaye to Administrator PowerShell use karein.
 - `DATABASE_URL is not defined`: Check karein ki file ka exact naam `backend/.env` hai, `.env.txt` nahi.
 - Prisma connection error: PostgreSQL service, database name, username, password, aur port check karein.
-- Browser me API error: Backend terminal running hai ya nahi aur `client/.env.local` ka URL `http://localhost:5000/api` hai ya nahi check karein.
+- Browser me API error: Backend terminal running hai ya nahi aur `client/.env.local` ka URL `http://localhost:3000/api` hai ya nahi check karein.
 - Port already in use: Dusra process band karein ya `PORT` change karke client/API configuration update karein.
 - `404` from frontend action: `client/src/lib/api.ts` me endpoint dekhein aur matching backend route file verify karein. Kuch frontend methods future routes ko target karte hain.
 
