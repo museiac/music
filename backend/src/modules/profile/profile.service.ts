@@ -20,7 +20,19 @@ export async function createProfile(
         const newProfile = await tx.profile.create({
             data: {
                 userId,
-                name: data.name
+                name: data.name,
+                stageName: data.stageName ?? null,
+                language: data.language ?? null,
+                genre: data.genre ?? null,
+                phone: data.phone ?? null,
+
+                ...(data.socials
+                ? {
+                    socials: {
+                        create: data.socials,
+                    },
+                }
+                : {}),
             },
         });
 
@@ -31,6 +43,12 @@ export async function createProfile(
 
             data: {
                 profileCompleted: true,
+            },
+        });
+
+        await tx.lead.create({
+            data:{
+                userId,
             },
         });
         return newProfile;

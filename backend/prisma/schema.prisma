@@ -34,17 +34,56 @@ model User {
   emailVerification EmailVerification[]
   profile           Profile?
   subscriptions     Subscription[]
+  lead              Lead?
 }
 
 model Profile {
   id               Int    @id @default(autoincrement())
   userId           Int    @unique
+
   name             String
+  stageName        String?
+
+  language         String?
+  genre            String?
+  phone            String?
+
+  slug             String? @unique
 
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)      
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade) 
+
+  socials          ArtistSocial[]  
+}
+
+enum SocialPlatform {
+  SPOTIFY
+  INSTAGRAM
+  YOUTUBE
+  SOUNDCLOUD
+  APPLE_MUSIC
+  FACEBOOK
+  X
+  TIKTOK
+  WEBSITE
+  OTHER
+}
+
+model ArtistSocial {
+  id        Int      @id @default(autoincrement())
+  profileId Int
+  platform  SocialPlatform
+  url       String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, platform])
+  @@index([profileId])
 }
 
 model Accounts {
@@ -108,4 +147,48 @@ model Subscription {
 
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   plan      Plan      @relation(fields: [planId], references: [id])
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  INTERESTED
+  FOLLOW_UP
+  CONVERTED
+  NOT_INTERESTED
+  LOST
+}
+
+enum LeadSource {
+  WEBSITE
+  REFERRAL
+  INSTAGRAM
+  WHATSAPP
+  MANUAL
+  OTHER
+}
+
+model Lead {
+  id Int @id @default(autoincrement())
+
+  userId Int @unique
+
+  status LeadStatus @default(NEW)
+  source LeadSource @default(WEBSITE)
+
+  notes String?
+
+  lastContactedAt DateTime?
+  nextFollowUpAt DateTime?
+  convertedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([source])
+  @@index([nextFollowUpAt])
+  @@index([createdAt])
 }
